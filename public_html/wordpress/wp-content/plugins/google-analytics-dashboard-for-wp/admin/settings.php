@@ -71,7 +71,6 @@ final class GADWP_Settings {
 	}
 
 	private static function navigation_tabs( $tabs ) {
-		echo '<div id="icon-themes" class="icon32"><br></div>';
 		echo '<h2 class="nav-tab-wrapper">';
 		foreach ( $tabs as $tab => $name ) {
 			echo "<a class='nav-tab' id='tab-$tab' href='#top#gadwp-$tab'>$name</a>";
@@ -532,6 +531,9 @@ final class GADWP_Settings {
                                     </td>
                                 </tr>
                                 <tr>
+                                    <td colspan="2"><?php echo "<h2>" . __( "Cross-domain Tracking", 'google-analytics-dashboard-for-wp' ) . "</h2>"; ?></td>
+                                </tr>
+                                <tr>
                                     <td colspan="2" class="gadwp-settings-title">
                                         <div class="button-primary gadwp-settings-switchoo">
                                             <input type="checkbox" name="options[ga_crossdomain_tracking]" value="1" class="gadwp-settings-switchoo-checkbox" id="ga_crossdomain_tracking" <?php checked( $options['ga_crossdomain_tracking'], 1 ); ?>> <label class="gadwp-settings-switchoo-label" for="ga_crossdomain_tracking">
@@ -545,6 +547,21 @@ final class GADWP_Settings {
                                 <tr>
                                     <td class="gadwp-settings-title"><label for="ga_crossdomain_list"><?php _e("Cross Domains:", 'google-analytics-dashboard-for-wp'); ?></label></td>
                                     <td><input type="text" id="ga_crossdomain_list" name="options[ga_crossdomain_list]" value="<?php echo esc_attr($options['ga_crossdomain_list']); ?>" size="50"></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2"><?php echo "<h2>" . __( "Cookie Customization", 'google-analytics-dashboard-for-wp' ) . "</h2>"; ?></td>
+                                </tr>
+                                <tr>
+                                    <td class="gadwp-settings-title"><label for="ga_cookiedomain"><?php _e("Cookie Domain:", 'google-analytics-dashboard-for-wp'); ?></label></td>
+                                    <td><input type="text" id="ga_cookiedomain" name="options[ga_cookiedomain]" value="<?php echo esc_attr($options['ga_cookiedomain']); ?>" size="50"></td>
+                                </tr>
+                                <tr>
+                                    <td class="gadwp-settings-title"><label for="ga_cookiename"><?php _e("Cookie Name:", 'google-analytics-dashboard-for-wp'); ?></label></td>
+                                    <td><input type="text" id="ga_cookiename" name="options[ga_cookiename]" value="<?php echo esc_attr($options['ga_cookiename']); ?>" size="50"></td>
+                                </tr>
+                                <tr>
+                                    <td class="gadwp-settings-title"><label for="ga_cookieexpires"><?php _e("Cookie Expires:", 'google-analytics-dashboard-for-wp'); ?></label></td>
+                                    <td><input type="text" id="ga_cookieexpires" name="options[ga_cookieexpires]" value="<?php echo esc_attr($options['ga_cookieexpires']); ?>" size="10"> seconds</td>
                                 </tr>
                             </table>
                         </div>
@@ -738,7 +755,7 @@ final class GADWP_Settings {
 							if ( ! $gadwp->config->options['ga_dash_tableid_jail'] ) {
 								$profile = GADWP_Tools::guess_default_domain( $profiles );
 								$gadwp->config->options['ga_dash_tableid_jail'] = $profile;
-								$gadwp->config->options['ga_dash_tableid'] = $profile;
+								//$gadwp->config->options['ga_dash_tableid'] = $profile;
 							}
 							$gadwp->config->set_plugin_options();
 							$options = self::update_options( 'general' );
@@ -880,7 +897,7 @@ final class GADWP_Settings {
 				if ( ! empty( $options['ga_dash_profile_list'] ) ) {
 					foreach ( $options['ga_dash_profile_list'] as $items ) {
 						if ( $items[3] ) {
-							echo '<option value="' . esc_attr( $items[1] ) . '" ' . selected( $items[1], $options['ga_dash_tableid_jail'] );
+							echo '<option value="' . esc_attr( $items[1] ) . '" ' . selected( $items[1], $options['ga_dash_tableid_jail'], false );
 							echo ' title="' . __( "View Name:", 'google-analytics-dashboard-for-wp' ) . ' ' . esc_attr( $items[0] ) . '">' . esc_html( GADWP_Tools::strip_protocol( $items[3] ) ) . ' &#8658; ' . esc_attr( $items[0] ) . '</option>';
 						}
 					}
@@ -1010,7 +1027,7 @@ final class GADWP_Settings {
 							if ( isset( $gadwp->config->options['ga_dash_tableid_jail'] ) && ! $gadwp->config->options['ga_dash_tableid_jail'] ) {
 								$profile = GADWP_Tools::guess_default_domain( $profiles );
 								$gadwp->config->options['ga_dash_tableid_jail'] = $profile;
-								$gadwp->config->options['ga_dash_tableid'] = $profile;
+								//$gadwp->config->options['ga_dash_tableid'] = $profile;
 							}
 							$gadwp->config->set_plugin_options( true );
 							$options = self::update_options( 'network' );
@@ -1047,7 +1064,7 @@ final class GADWP_Settings {
 						if ( isset( $gadwp->config->options['ga_dash_tableid_jail'] ) && ! $gadwp->config->options['ga_dash_tableid_jail'] ) {
 							$profile = GADWP_Tools::guess_default_domain( $profiles );
 							$gadwp->config->options['ga_dash_tableid_jail'] = $profile;
-							$gadwp->config->options['ga_dash_tableid'] = $profile;
+							//$gadwp->config->options['ga_dash_tableid'] = $profile;
 						}
 						$gadwp->config->set_plugin_options( true );
 						$options = self::update_options( 'network' );
@@ -1196,7 +1213,7 @@ final class GADWP_Settings {
 						if ( ! empty( $options['ga_dash_profile_list'] ) ) {
 							foreach ( $options['ga_dash_profile_list'] as $items ) {
 								if ( $items[3] ) {
-									echo '<option value="' . esc_attr( $items[1] ) . '" ' . selected( $items[1], isset( $options['ga_dash_tableid_network']->$blog['blog_id'] ) ? $options['ga_dash_tableid_network']->$blog['blog_id'] : '' );
+									echo '<option value="' . esc_attr( $items[1] ) . '" ' . selected( $items[1], isset( $options['ga_dash_tableid_network']->$blog['blog_id'] ) ? $options['ga_dash_tableid_network']->$blog['blog_id'] : '', false );
 									echo ' title="' . __( "View Name:", 'google-analytics-dashboard-for-wp' ) . ' ' . esc_attr( $items[0] ) . '">' . esc_html( GADWP_Tools::strip_protocol( $items[3] ) ) . ' &#8658; ' . esc_attr( $items[0] ) . '</option>';
 								}
 							}
@@ -1326,6 +1343,13 @@ final class GADWP_Settings {
                                                             </h3>
                                                             <div class="inside">
                                                                 <div class="gadash-title">
+                                                                    <a href="https://deconf.com/clicky-web-analytics-review/?utm_source=gadwp_config&utm_medium=link&utm_content=clicky&utm_campaign=gadwp"><img src="<?php echo plugins_url( 'images/clicky.png' , __FILE__ ); ?>" /></a>
+                                                                </div>
+                                                                <div class="gadash-desc">
+                                                                    <?php printf(__('%s service with users tracking at IP level.', 'google-analytics-dashboard-for-wp'), sprintf('<a href="https://deconf.com/clicky-web-analytics-review/?utm_source=gadwp_config&utm_medium=link&utm_content=clicky&utm_campaign=gadwp">%s</a>', __('Web Analytics', 'google-analytics-dashboard-for-wp')));?>
+                                                                </div>
+                                                                <br />
+                                                                <div class="gadash-title">
                                                                     <a href="https://deconf.com/move-website-https-ssl/?utm_source=gadwp_config&utm_medium=link&utm_content=ssl&utm_campaign=gadwp"><img src="<?php echo plugins_url( 'images/ssl.png' , __FILE__ ); ?>" /></a>
                                                                 </div>
                                                                 <div class="gadash-desc">
@@ -1337,26 +1361,6 @@ final class GADWP_Settings {
                                                                 </div>
                                                                 <div class="gadash-desc">
                                                                     <?php printf(__('Other %s written by the same author', 'google-analytics-dashboard-for-wp'), sprintf('<a href="https://deconf.com/wordpress/?utm_source=gadwp_config&utm_medium=link&utm_content=plugins&utm_campaign=gadwp">%s</a>', __('WordPress Plugins', 'google-analytics-dashboard-for-wp')));?>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="postbox">
-                                                            <h3>
-                                                                <span><?php _e("Other Services",'google-analytics-dashboard-for-wp')?></span>
-                                                            </h3>
-                                                            <div class="inside">
-                                                                <div class="gadash-title">
-                                                                    <a href="https://deconf.com/wordpress-cdn-speeds-up-your-site/"><img src="<?php echo plugins_url( 'images/mcdn.png' , __FILE__ ); ?>" /></a>
-                                                                </div>
-                                                                <div class="gadash-desc">
-                                                                    <?php printf(__('Speed up your website and plug into a whole %s', 'google-analytics-dashboard-for-wp'), sprintf('<a href="https://deconf.com/wordpress-cdn-speeds-up-your-site/?utm_source=gadwp_config&utm_medium=link&utm_content=maxcdn&utm_campaign=gadwp">%s</a>.', __('new level of site speed', 'google-analytics-dashboard-for-wp')));?>
-                                                                </div>
-                                                                <br />
-                                                                <div class="gadash-title">
-                                                                    <a href="https://deconf.com/clicky-web-analytics-review/?utm_source=gadwp_config&utm_medium=link&utm_content=clicky&utm_campaign=gadwp"><img src="<?php echo plugins_url( 'images/clicky.png' , __FILE__ ); ?>" /></a>
-                                                                </div>
-                                                                <div class="gadash-desc">
-                                                                    <?php printf(__('%s service with users tracking at IP level.', 'google-analytics-dashboard-for-wp'), sprintf('<a href="https://deconf.com/clicky-web-analytics-review/?utm_source=gadwp_config&utm_medium=link&utm_content=clicky&utm_campaign=gadwp">%s</a>', __('Web Analytics', 'google-analytics-dashboard-for-wp')));?>
                                                                 </div>
                                                             </div>
                                                         </div>

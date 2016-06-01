@@ -7,7 +7,7 @@
             array(
                 'name'        => 'Redux Framework',
                 'slug'        => 'redux-framework',
-                'version'     => '3.5.6.1',
+                'version'     => '3.5.7',
                 'is_callable' => 'redux-framework-master',
                 'required'    => false,
             ),

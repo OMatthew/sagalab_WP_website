@@ -60,8 +60,19 @@ if ( ! class_exists( 'GADWP_GAPI_Controller' ) ) {
 			if ( $this->gadwp->config->options['ga_dash_token'] ) {
 				$token = $this->gadwp->config->options['ga_dash_token'];
 				if ( $token ) {
-					$this->client->setAccessToken( $token );
-					$gadwp->config->options['ga_dash_token'] = $this->client->getAccessToken();
+					try {
+						$this->client->setAccessToken( $token );
+						$gadwp->config->options['ga_dash_token'] = $this->client->getAccessToken();
+					} catch ( Google_IO_Exception $e ) {
+						GADWP_Tools::set_cache( 'ga_dash_lasterror', date( 'Y-m-d H:i:s' ) . ': ' . esc_html( $e ), $this->error_timeout );
+					} catch ( Google_Service_Exception $e ) {
+						GADWP_Tools::set_cache( 'ga_dash_lasterror', date( 'Y-m-d H:i:s' ) . ': ' . esc_html( "(" . $e->getCode() . ") " . $e->getMessage() ), $this->error_timeout );
+						GADWP_Tools::set_cache( 'ga_dash_gapi_errors', array( $e->getCode(), (array) $e->getErrors() ), $this->error_timeout );
+						$this->reset_token();
+					} catch ( Exception $e ) {
+						GADWP_Tools::set_cache( 'ga_dash_lasterror', date( 'Y-m-d H:i:s' ) . ': ' . esc_html( $e ), $this->error_timeout );
+						$this->reset_token();
+					}
 					if ( is_multisite() && $this->gadwp->config->options['ga_dash_network'] ) {
 						$this->gadwp->config->set_plugin_options( true );
 					} else {
@@ -212,7 +223,6 @@ if ( ! class_exists( 'GADWP_GAPI_Controller' ) ) {
 		public function reset_token( $all = true ) {
 			$this->gadwp->config->options['ga_dash_token'] = "";
 			if ( $all ) {
-				$this->gadwp->config->options['ga_dash_tableid'] = "";
 				$this->gadwp->config->options['ga_dash_tableid_jail'] = "";
 				$this->gadwp->config->options['ga_dash_profile_list'] = array();
 				try {
@@ -331,14 +341,13 @@ if ( ! class_exists( 'GADWP_GAPI_Controller' ) ) {
 			if ( $from == "today" || $from == "yesterday" ) {
 				$dimensions = 'ga:hour';
 				$dayorhour = __( "Hour", 'google-analytics-dashboard-for-wp' );
-			} else
-				if ( $from == "365daysAgo" || $from == "1095daysAgo" ) {
-					$dimensions = 'ga:yearMonth, ga:month';
-					$dayorhour = __( "Date", 'google-analytics-dashboard-for-wp' );
-				} else {
-					$dimensions = 'ga:date,ga:dayOfWeekName';
-					$dayorhour = __( "Date", 'google-analytics-dashboard-for-wp' );
-				}
+			} else if ( $from == "365daysAgo" || $from == "1095daysAgo" ) {
+				$dimensions = 'ga:yearMonth, ga:month';
+				$dayorhour = __( "Date", 'google-analytics-dashboard-for-wp' );
+			} else {
+				$dimensions = 'ga:date,ga:dayOfWeekName';
+				$dayorhour = __( "Date", 'google-analytics-dashboard-for-wp' );
+			}
 			$options = array( 'dimensions' => $dimensions, 'quotaUser' => $this->managequota . 'p' . $projectId );
 			if ( $filter ) {
 				$options['filters'] = 'ga:pagePath==' . $filter;
@@ -353,18 +362,21 @@ if ( ! class_exists( 'GADWP_GAPI_Controller' ) ) {
 				foreach ( $data->getRows() as $row ) {
 					$gadwp_data[] = array( (int) $row[0] . ':00', round( $row[1], 2 ) );
 				}
-			} else
-				if ( $from == "365daysAgo" || $from == "1095daysAgo" ) {
-					foreach ( $data->getRows() as $row ) {
-						// $row[0] contains 'yyyyMM', '01' is added to make it a valid date format
-						$gadwp_data[] = array( date_i18n( 'F, Y', strtotime( $row[0] . '01' ) ), round( $row[2], 2 ) );
-					}
-				} else {
-					foreach ( $data->getRows() as $row ) {
-						// $row[0] contains 'yyyyMMdd'
-						$gadwp_data[] = array( date_i18n( 'l, ' . __( 'F j, Y' ), strtotime( $row[0] ) ), round( $row[2], 2 ) );
-					}
+			} else if ( $from == "365daysAgo" || $from == "1095daysAgo" ) {
+				foreach ( $data->getRows() as $row ) {
+					/* translators:
+					 * Example: 'F, Y' will become 'November, 2015'
+					 * For details see: http://php.net/manual/en/function.date.php#refsect1-function.date-parameters */
+					$gadwp_data[] = array( date_i18n( __('F, Y', 'google-analytics-dashboard-for-wp'), strtotime( $row[0] . '01' ) ), round( $row[2], 2 ) );
 				}
+			} else {
+				foreach ( $data->getRows() as $row ) {
+					/* translators:
+					 * Example: 'l, F j, Y' will become 'Thusday, November 17, 2015'
+					 * For details see: http://php.net/manual/en/function.date.php#refsect1-function.date-parameters */
+					$gadwp_data[] = array( date_i18n( __( 'l, F j, Y', 'google-analytics-dashboard-for-wp' ), strtotime( $row[0] ) ), round( $row[2], 2 ) );
+				}
+			}
 			return $gadwp_data;
 		}
 
@@ -668,7 +680,7 @@ if ( ! class_exists( 'GADWP_GAPI_Controller' ) ) {
 				$max = max( $max_array ) ? max( $max_array ) : 1;
 			}
 			foreach ( $data->getRows() as $row ) {
-				$gadwp_data[] = array( date_i18n( 'l, ' . __( 'F j, Y' ), strtotime( $row[0] ) ), ( $anonim ? round( $row[2] * 100 / $max, 2 ) : (int) $row[2] ) );
+				$gadwp_data[] = array( date_i18n( __( 'l, F j, Y', 'google-analytics-dashboard-for-wp' ), strtotime( $row[0] ) ), ( $anonim ? round( $row[2] * 100 / $max, 2 ) : (int) $row[2] ) );
 			}
 			$totals = $data->getTotalsForAllResults();
 			return array( $gadwp_data, $anonim ? 0 : number_format_i18n( $totals['ga:sessions'] ) );
@@ -715,7 +727,7 @@ if ( ! class_exists( 'GADWP_GAPI_Controller' ) ) {
 				$gadwp_data->rows[$i] = array_map( 'esc_html', $row );
 				$i++;
 			}
-			return $gadwp_data;
+			return array( $gadwp_data );
 		}
 
 		private function map( $map ) {

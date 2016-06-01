@@ -12,6 +12,9 @@
     z-index: 9999;
     transition: all 1s ease;
 }
+.wp-customizer .redux-section-locked {
+    top: 70px;
+}
 
 .redux-section-locked .redux-locked-inner {
     height: 80px;
@@ -33,6 +36,19 @@
 
 .redux-section-locked .redux-locked-inner strong {
     text-transform: capitalize
+}
+
+#accordion-section-evl-tab-17 > ul > .redux-section-locked {
+    height: 560px;
+}
+#accordion-section-evl-tab-16 > ul > .redux-section-locked {
+    height: 1020px;
+}
+#accordion-section-evl-tab-19 > ul > .redux-section-locked {
+    height: 1110px;
+}
+#accordion-section-evl-tab-12 > ul > .redux-section-locked {
+    height: 1340px;
 }
 
 .redux-field-locked {
@@ -81,6 +97,7 @@
     font-size: 35px;
     width: 45px;
     height: 45px;
+    border: 0;
 }
 
 .redux-field-locked .redux-locked-inner strong {

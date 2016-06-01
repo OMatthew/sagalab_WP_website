@@ -84,7 +84,8 @@
                     if ( $field['locked'] !== true && $pagenow != "customize.php" ) {
                         $message = $field['locked'];
                     }
-                    $render = '<div class="redux-field-locked"><div class="redux-locked-inner'.(empty($message) ? ' empty' : '').'"><div class="el el-lock">&nbsp;</div>' . $message . '</div></div>' . $render;
+                    $t4p_url = esc_url( "https://theme4press.com/" );
+                    $render = '<div class="redux-field-locked"><div class="redux-locked-inner'.(empty($message) ? ' empty' : '').'"><a target="_blank" href="'. $t4p_url.'evolve-multipurpose-wordpress-theme/" class="el el-lock">&nbsp;</a>' . $message . '</div></div>' . $render;					
                 }
                 return $render;
             }

@@ -64,7 +64,7 @@
         require_once dirname( __FILE__ ) . '/inc/themecheck/class.redux_themecheck.php';
 
         // Welcome
-        require_once dirname( __FILE__ ) . '/inc/welcome/welcome.php';
+        // require_once dirname( __FILE__ ) . '/inc/welcome/welcome.php'; // remove welcome page for embeded version
 
         /**
          * Main ReduxFramework class
@@ -77,7 +77,7 @@
             // Please update the build number with each push, no matter how small.
             // This will make for easier support when we ask users what version they are using.
 
-            public static $_version = '3.5.6.2';
+            public static $_version = '3.5.7';
             public static $_dir;
             public static $_url;
             public static $_upload_dir;
@@ -471,7 +471,7 @@
                     'page_priority'             => null,
                     'allow_sub_menu'            => true,
                     // allow submenus to be added if menu_type == menu
-                    'save_defaults'             => false,
+                    'save_defaults'             => true,
                     // Save defaults to the DB on it if empty
                     'footer_credit'             => '',
                     'async_typography'          => false,
@@ -516,6 +516,7 @@
                     'network_sites'             => true,
                     // Enable sites as well as admin when using network database mode
                     'hide_reset'                => false,
+                    'hide_save'                 => false,
                     'hints'                     => array(
                         'icon'          => 'el el-question-sign',
                         'icon_position' => 'right',
@@ -551,7 +552,7 @@
                     // Path to the templates file for various Redux elements
                     'ajax_save'                 => true,
                     // Disable the use of ajax saving for the panel
-                    'use_cdn'                   => false,
+                    'use_cdn'                   => true,
                     'cdn_check_time'            => 1440,
                     'options_api'               => true,
                 );
@@ -1378,10 +1379,10 @@
                     // Add the submenu if it's permitted.
                     if ( true == $addMenu ) {
                         // ONLY for non-wp.org themes OR plugins. Theme-Check alert shown if used and IS theme.
-                        $this->page = call_user_func( 'add_submenu_page', $page_parent, $page_title, $menu_title, $page_permissions, $page_slug, array(
-                            &$this,
-                            'generate_panel'
-                        ) );
+                        // $this->page = call_user_func( 'add_submenu_page', $page_parent, $page_title, $menu_title, $page_permissions, $page_slug, array(
+                        //     &$this,
+                        //     'generate_panel'
+                        // ) );
                     }
                 }
             }
@@ -1404,11 +1405,11 @@
                     );
                 } else {
                     // Theme-Check notice is displayed for WP.org theme devs, informing them to NOT use this.
-                    $this->page = call_user_func( 'add_menu_page', $this->args['page_title'], $this->args['menu_title'], $this->args['page_permissions'], $this->args['page_slug'], array(
-                        &$this,
-                        'generate_panel'
-                    ), $this->args['menu_icon'], $this->args['page_priority']
-                    );
+                    // $this->page = call_user_func( 'add_menu_page', $this->args['page_title'], $this->args['menu_title'], $this->args['page_permissions'], $this->args['page_slug'], array(
+                    //     &$this,
+                    //     'generate_panel'
+                    // ), $this->args['menu_icon'], $this->args['page_priority']
+                    // );
 
                     if ( true === $this->args['allow_sub_menu'] ) {
                         if ( ! isset ( $section['type'] ) || $section['type'] != 'divide' ) {
@@ -1436,9 +1437,9 @@
                                 }
 
                                 // ONLY for non-wp.org themes OR plugins. Theme-Check alert shown if used and IS theme.
-                                call_user_func( 'add_submenu_page', $this->args['page_slug'], $section['title'], $section['title'], $this->args['page_permissions'], $this->args['page_slug'] . '&tab=' . $k,
-                                    //create_function( '$a', "return null;" )
-                                    '__return_null' );
+                                // call_user_func( 'add_submenu_page', $this->args['page_slug'], $section['title'], $section['title'], $this->args['page_permissions'], $this->args['page_slug'] . '&tab=' . $k,
+                                //     //create_function( '$a', "return null;" )
+                                //     '__return_null' );
                             }
 
                             // Remove parent submenu item instead of adding null item.
@@ -2039,6 +2040,11 @@
                         $section['title'] = "";
                     }
 
+                    if ( isset ( $section['customizer_only'] ) && $section['customizer_only'] == true ) {
+                        $section['panel'] = false;
+                        $this->sections[ $k ] = $section;
+                    }
+
                     $heading = isset ( $section['heading'] ) ? $section['heading'] : $section['title'];
 
                     if ( isset ( $section['permissions'] ) ) {
@@ -2123,6 +2129,10 @@
                                 $display = false;
                             }
 
+                            if ( isset ( $section['customizer'] ) ) {
+                                $field['customizer']                       = $section['customizer'];
+                                $this->sections[ $k ]['fields'][ $fieldk ] = $field;
+                            }
 
                             if ( isset ( $field['permissions'] ) ) {
 
@@ -2744,15 +2754,24 @@
             }
 
             public function ajax_save() {
-
-
-                if ( ! wp_verify_nonce( $_REQUEST['nonce'], "redux_ajax_nonce" ) ) {
-                    json_encode( array(
-                        'status' => __( 'Invalid security credential, please reload the page and try again.', 'redux-framework' ),
-                        'action' => 'reload'
+                if ( ! wp_verify_nonce( $_REQUEST['nonce'], "redux_ajax_nonce" . $this->args['opt_name'] ) ) {
+                    echo json_encode( array(
+                        'status' => __( 'Invalid security credential.  Please reload the page and try again.', 'redux-framework' ),
+                        'action' => ''
                     ) );
+
                     die();
                 }
+
+                if (!current_user_can ( $this->args['page_permissions'] )) {
+                    echo json_encode( array(
+                        'status' => __( 'Invalid user capability.  Please reload the page and try again.', 'redux-framework' ),
+                        'action' => ''
+                    ) );
+
+                    die();
+                }
+
                 $redux = ReduxFrameworkInstances::get_instance( $_POST['opt_name'] );
 
                 if ( ! empty ( $_POST['data'] ) && ! empty ( $redux->args['opt_name'] ) ) {
@@ -2804,7 +2823,18 @@
                             }
                             $redux->set_options( $redux->_validate_options( $values ) );
 
-                            if ( ( isset ( $values['defaults'] ) && ! empty ( $values['defaults'] ) ) || ( isset ( $values['defaults-section'] ) && ! empty ( $values['defaults-section'] ) ) ) {
+                            $do_reload = false;
+                            if (isset($this->reload_fields) && !empty($this->reload_fields)) {
+                                if (!empty($this->transients['changed_values'])) {
+                                    foreach ($this->reload_fields as $idx => $val) {
+                                        if (  array_key_exists ( $val, $this->transients['changed_values'] )) {
+                                            $do_reload = true;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if ( $do_reload || ( isset ( $values['defaults'] ) && ! empty ( $values['defaults'] ) ) || ( isset ( $values['defaults-section'] ) && ! empty ( $values['defaults-section'] ) )) {
                                 echo json_encode( array( 'status' => 'success', 'action' => 'reload' ) );
                                 die ();
                             }
@@ -3578,8 +3608,7 @@
              */
             public function check_dependencies( $field ) {
                 //$params = array('data_string' => "", 'class_string' => "");
-
-                if ( isset( $field['reload_on_change'] ) && $field['reload_on_change'] ) {
+                if ( isset( $field['ajax_save'] ) && $field['ajax_save'] == false ) {
                     $this->reload_fields[] = $field['id'];
                 }
 
